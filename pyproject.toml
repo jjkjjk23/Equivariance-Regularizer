@@ -1,0 +1,21 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "equivariance_regularizer"
+version = "0.0.3"
+authors = [
+  { name="Jacob Keller"},
+]
+description = "An equivariance regularization term for PyTorch."
+readme = "README.md"
+requires-python = ">=3.7"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+
+[project.urls]
+"Homepage" = "https://github.com/jjkjjk23/Equivariance-Regularizer"

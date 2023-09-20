@@ -1,17 +1,23 @@
 # Equivariance-Regularizer
+~~~
+pip install equivariance-regularizer==0.0.3
+~~~
 A regularization term for Pytorch that pushes the model to be more equivariant with respect to a given semigroup action. 
 
-### CLASS: EquivarianceError(model, transforms, dist=torch.dist, n=1, num_funcs=1)
+### CLASS: EquivarianceError(model, shape, transforms, dist=2, n=1, num_funcs=1, bounds=[0,1])
 1. model is a PyTorch module, 
-2. transforms is a list of tuples (f_out, f_in, epsilon, lambda_eq) where:
+2. shape is the input shape for tensors in the neural net. This SHOULD NOT include a batch dimension.
+3. transforms is a list of tuples (f_out, f_in, epsilon, lambda_eq) where:
     1. f_out is a transformation to be applied to the outputs of the neural network.
     2. f_in is a transformation to be applied to the inputs
     3. epsilon is a threshold value.
     4. lambda_eq is a weight constant that will scale the regularization term. 
-3. dist is a distance function, so it must take in two tensors with the same shape and return a scalar. The default is the l2 distance but other examples are given in the documentation.
-The user could also pass in an integer p (or inf), which will give the lp distance, or one of the strings "cross_entropy" or "cross_entropy_logits".
-4. n is the sample size for the Monte Carlo integral.
-5. num_funcs is the number of functions considered each time the equivariance error is calculated. A low value for num_funcs (as well as n) gives a coarser approximation to the true equivariance error, but is much better for performance and is still effective in practice.
+4. dist is a distance function, so it should take in two tensors with the shape (batch, output_shape) and return either a scalar or a tensor of size (batch). If the output is not a scalar, the values of that tensor will be averaged.  The default is the l2 distance but other examples are given in the documentation.
+The user could also pass in an integer p (or the string 'inf'), which will give the lp distance, or one of the strings "cross_entropy" or "cross_entropy_logits".
+5. n is the sample size for the Monte Carlo integral.
+6. num_funcs is the number of functions considered each time the equivariance error is calculated. A low value for num_funcs (as well as n) gives a coarser approximation to the true equivariance error, but is much better for performance and is still effective in practice.
+7. bounds is the bounds for the Monte Carlo integral. It should be a tensor of shape (shape,2) where bounds[...,0] is a tensor of lower bounds and bounds[...,1] of upper bounds. Defaults to the hypercube of tensors with entries in the interval [0,1]. This is appropriate if the model takes tensors with positive entries and begins by unit normalization of input tensors so that the domain of integration is really the positive orthant of the unit sphere. This is the case for many tasks relating to images and audio. 
+If the bounds provided have a different shape they will be broadcasted to the above shape. Also if given as python lists or numpy arrays they will be converted torch tensors. Therefore the user could give bounds = [0,1] and this would give the same as the default.
 
 ## Implementation
 ~~~python
@@ -19,12 +25,21 @@ class Model(torch.nn.Module):
     ...
     def __init__(transforms, dist, n, num_funcs):
         ...
-        self.equivariance_error = EquivarianceError(self, transforms, dist, n, num_funcs)
     def training_step(self):
         ...
-        loss += self.equivariance_error()
+        loss += equivariance_error()
+        ...
+model = Model()
+equivariance_error = EquivarianceError(model, shape, transforms, dist, n, num_funcs, bounds)
 ~~~
 
+Note that this seems backwards because equivariance_error appears in the training step which is before equivariance_error is defined, but this is no problem as long as equivariance_error is not referred to while initializing the model. It is necessary for the model to be defined before equivariance_error is.
+
+Also, it is recommended not to initialize EquivarianceError inside of the model with a call like 
+~~~python
+EquivarianceError(self, shape, transforms, dist, n, num_funcs, bounds)
+~~~
+This can cause an infinite recursion error.
 ## What it does:
 
 Given a neural net called "model", a distance function "dist" (e.g. for regression tasks the l2 distance), one tuple (f_out,f_in,epsilon, lambda_eq), and an input point v, we define the equivariance error of the model at v as 
@@ -52,7 +67,7 @@ As stated above, the l2 distances and (similarly lp for any p) are appropriate f
 
 For classification, when the loss function is cross entropy, an appropriate distance function is the distance between the log likelihoods, however one should be careful about the way the transformation f_out introduces components with zeros. 
 
-So if the model has no softmax layer and is outputting logits, then it would be appropriate to use "cross_entropy_logits" as the dist argument, and the dist function is essentially
+So if the model has no softmax layer and is outputting logits, then it would be appropriate to use "cross_entropy_logits" as the dist argument, and the dist function is essentially (ignoring that the tensors are batched)
 
 ~~~python
 def cross_entropy_logits(tensor1, tensor2):
@@ -60,8 +75,9 @@ def cross_entropy_logits(tensor1, tensor2):
     tensor2 = torch.nn.functional.log_softmax(tensor2, dim=-1)
     return torch.dist(tensor1,tensor2,2)
 ~~~
+Note that in this case, the output transforms are applied to the logits, not the Softmax. This can be good, but if it is not desired it is better to end the model with a softmax layer and use dist = "cross_entropy".
 
-If the model does end with a softmax layer, set dist = "cross_entropy" and then we will use torch.log instead of log_softmax.
+If the model does end with a softmax layer, set dist = "cross_entropy" and the distance function will use torch.log instead of log_softmax.
 
 
 
