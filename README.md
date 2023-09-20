@@ -21,6 +21,7 @@ If the bounds provided have a different shape they will be broadcasted to the ab
 
 ## Implementation
 ~~~python
+from equivariance_regularizer import EquivarianceRegularizer
 class Model(torch.nn.Module):
     ...
     def __init__(transforms, dist, n, num_funcs):
@@ -30,14 +31,14 @@ class Model(torch.nn.Module):
         loss += equivariance_error()
         ...
 model = Model()
-equivariance_error = EquivarianceError(model, shape, transforms, dist, n, num_funcs, bounds)
+equivariance_error = EquivarianceRegularizer(model, shape, transforms, dist, n, num_funcs, bounds)
 ~~~
 
 Note that this seems backwards because equivariance_error appears in the training step which is before equivariance_error is defined, but this is no problem as long as equivariance_error is not referred to while initializing the model. It is necessary for the model to be defined before equivariance_error is.
 
-Also, it is recommended not to initialize EquivarianceError inside of the model with a call like 
+Also, it is recommended not to initialize EquivarianceRegularizer inside of the model with a call like 
 ~~~python
-EquivarianceError(self, shape, transforms, dist, n, num_funcs, bounds)
+EquivarianceRegularizer(self, shape, transforms, dist, n, num_funcs, bounds)
 ~~~
 This can cause an infinite recursion error.
 ## What it does:
