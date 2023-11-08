@@ -23,8 +23,9 @@ class EquivarianceRegularizer(nn.Module):
             if len(f)==3:
                 inputs = torch.cat([inputs, self.model(inputs)])
                 inputs = f[0](inputs)
-                error = self.distance(self.model(inputs[:inputs.shape[0]/2]), inputs[inputs.shape[0]/2:])
+                error = self.distance(self.model(inputs[:inputs.shape[0]//2]), inputs[inputs.shape[0]//2:])
             else:
+                assert len(f) == 4, "The transform should be given as a list of four elements: the output transform, the input transform, the threshold value epsilon, and the equivariance weight. If the input transform equals the output transform, the list may be of length three."
                 error = self.distance(f[0](self.model(inputs)), self.model(f[1](inputs)))
             output += f[-1]*nn.functional.relu(error - f[-2])
         return output
