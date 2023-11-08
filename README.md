@@ -12,6 +12,7 @@ A regularization term for Pytorch that pushes the model to be more equivariant w
     2. f_in is a transformation to be applied to the inputs
     3. epsilon is a threshold value.
     4. lambda_eq is a weight constant that will scale the regularization term. 
+    5. If f_out equals f_in, f_in should be omitted, so that the tuple is (f_out, epsilon, lambda_eq).
 4. dist is a distance function, so it should take in two tensors with the shape (batch, output_shape) and return either a scalar or a tensor of size (batch). If the output is not a scalar, the values of that tensor will be averaged.  The default is the l2 distance but other examples are given in the documentation.
 The user could also pass in an integer p (or the string 'inf'), which will give the lp distance, or one of the strings "cross_entropy" or "cross_entropy_logits".
 5. n is the sample size for the Monte Carlo integral.
@@ -80,7 +81,9 @@ Note that in this case, the output transforms are applied to the logits, not the
 
 If the model does end with a softmax layer, set dist = "cross_entropy" and the distance function will use torch.log instead of log_softmax.
 
+## Random Transforms
 
+Many transforms used for data augmentation are random, e.g. rotate by a random angle. If the input transformation is random like this and the output function doesn't depend on the randomly chosen parameter (for instance if the output transformation is the identity transformation and does nothing no matter what angle the input is rotated by) then there is no need to modify any of the above setup. However, for tasks such as image segmentation, where the input transformation usually equals the output transformation, we need to be careful. In this case, the transform should be input as (f_out, epsilon, lambda_eq), and the package will make sure that the exact same random transformation is applied to both the input and output.
 
 
 

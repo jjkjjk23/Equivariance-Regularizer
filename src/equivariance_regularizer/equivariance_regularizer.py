@@ -19,8 +19,14 @@ class EquivarianceRegularizer(nn.Module):
         output = 0
         inputs = self.sampler()
         for f in funcs:
-            error = self.distance(f[0](self.model(inputs)), self.model(f[1](inputs)))
-            output += f[3]*nn.functional.relu(error - f[2])
+            #This is a trick that lets f be random as long as f[0]==f[1], in which case the user should omit f[1] from the list
+            if len(f)==3:
+                inputs = torch.cat([inputs, self.model(inputs)])
+                inputs = f[0](inputs)
+                error = self.distance(self.model(inputs[:inputs.shape[0]/2]), inputs[inputs.shape[0]/2:])
+            else:
+                error = self.distance(f[0](self.model(inputs)), self.model(f[1](inputs)))
+            output += f[-1]*nn.functional.relu(error - f[-2])
         return output
     def distance(self, t1,t2):
         out_shape = t1.shape
