@@ -14,10 +14,11 @@ class EquivarianceRegularizer(nn.Module):
         self.bounds = bounds
         self.shape = shape
         
-    def __call__(self):
+    def __call__(self, inputs = None):
         funcs = random.choices(self.transforms, k=self.num_funcs)
         output = 0
-        inputs = self.sampler()
+        if inputs == None:
+            inputs = self.sampler()
         for f in funcs:
             #This is a trick that lets f be random as long as f[0]==f[1], in which case the user should omit f[1] from the list
             if len(f)==3:

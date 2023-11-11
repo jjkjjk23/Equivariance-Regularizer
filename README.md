@@ -20,6 +20,8 @@ The user could also pass in an integer p (or the string 'inf'), which will give 
 7. bounds is the bounds for the Monte Carlo integral. It should be a tensor of shape (shape,2) where bounds[...,0] is a tensor of lower bounds and bounds[...,1] of upper bounds. Defaults to the hypercube of tensors with entries in the interval [0,1]. This is appropriate if the model takes tensors with positive entries and begins by unit normalization of input tensors so that the domain of integration is really the positive orthant of the unit sphere. This is the case for many tasks relating to images and audio. 
 If the bounds provided have a different shape they will be broadcasted to the above shape. Also if given as python lists or numpy arrays they will be converted torch tensors. Therefore the user could give bounds = [0,1] and this would give the same as the default.
 
+The objects in this class are callable. When called with no arguments the equivariance error will be calculated on a random sample of size n points inside the given bounds. If called with a single tensor argument, the equivariance error will be calculated at that point. Natural inputs would be elements of the training set or vectors that are randomly generated using a different scheme than our default. 
+
 ## Implementation
 ~~~python
 from equivariance_regularizer import EquivarianceRegularizer
@@ -42,6 +44,9 @@ Also, it is recommended not to initialize EquivarianceRegularizer inside of the 
 EquivarianceRegularizer(self, shape, transforms, dist, n, num_funcs, bounds)
 ~~~
 This can cause an infinite recursion error.
+
+In practice, it can be very memory intensive to calculate the equivariance error along with the loss. If this is an issue it is advisable to alternate between a standard training step and a training step that only does a backwards pass of the equivariance error.
+
 ## What it does:
 
 Given a neural net called "model", a distance function "dist" (e.g. for regression tasks the l2 distance), one tuple (f_out,f_in,epsilon, lambda_eq), and an input point v, we define the equivariance error of the model at v as 
