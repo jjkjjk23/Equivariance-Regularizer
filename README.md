@@ -5,19 +5,19 @@ pip install equivariance-regularizer==0.1.0
 A regularization term for Pytorch that pushes the model to be more equivariant with respect to a given semigroup action. 
 
 ### CLASS: EquivarianceError(model, shape, transforms, dist=2, n=1, num_funcs=1, bounds=[0,1])
-1. model is a PyTorch module, 
-2. shape is the input shape for tensors in the neural net. This SHOULD NOT include a batch dimension.
-3. transforms is a list of tuples (f_out, f_in, epsilon, lambda_eq) where:
-    1. f_out is a transformation to be applied to the outputs of the neural network.
-    2. f_in is a transformation to be applied to the inputs
-    3. epsilon is a threshold value.
-    4. lambda_eq is a weight constant that will scale the regularization term. 
+1. "model" is a PyTorch module, 
+2. "shape" is the input shape for tensors in the neural net. This SHOULD NOT include a batch dimension.
+3. "transforms" is a list of tuples (f_out, f_in, epsilon, lambda_eq) where:
+    1. "f_out" is a transformation to be applied to the outputs of the neural network.
+    2. "f_in" is a transformation to be applied to the inputs
+    3. "epsilon" is a threshold value.
+    4. "lambda_eq" is a weight constant that will scale the regularization term. 
     5. If f_out equals f_in, f_in should be omitted, so that the tuple is (f_out, epsilon, lambda_eq).
-4. dist is a distance function, so it should take in two tensors with the shape (batch, output_shape) and return either a scalar or a tensor of size (batch). If the output is not a scalar, the values of that tensor will be averaged.  The default is the l2 distance but other examples are given in the documentation.
+4. "dist" is a distance function, so it should take in two tensors with the shape (batch, output_shape) and return either a scalar or a tensor of size (batch). If the output is not a scalar, the values of that tensor will be averaged.  The default is the l2 distance but other examples are given in the documentation.
 The user could also pass in an integer p (or the string 'inf'), which will give the lp distance, or one of the strings "cross_entropy" or "cross_entropy_logits".
-5. n is the sample size for the Monte Carlo integral.
-6. num_funcs is the number of functions considered each time the equivariance error is calculated. A low value for num_funcs (as well as n) gives a coarser approximation to the true equivariance error, but is much better for performance and is still effective in practice.
-7. bounds is the bounds for the Monte Carlo integral. It should be a tensor of shape (shape,2) where bounds[...,0] is a tensor of lower bounds and bounds[...,1] of upper bounds. Defaults to the hypercube of tensors with entries in the interval [0,1]. This is appropriate if the model takes tensors with positive entries and begins by unit normalization of input tensors so that the domain of integration is really the positive orthant of the unit sphere. This is the case for many tasks relating to images and audio. 
+5. "n" is the sample size for the Monte Carlo integral.
+6. "num_funcs" is the number of functions considered each time the equivariance error is calculated. A low value for num_funcs (as well as n) gives a coarser approximation to the true equivariance error, but is much better for performance and is still effective in practice.
+7. "bounds" is the bounds for the Monte Carlo integral. It should be a tensor of shape (shape,2) where bounds[...,0] is a tensor of lower bounds and bounds[...,1] of upper bounds. Defaults to the hypercube of tensors with entries in the interval [0,1]. This is appropriate if the model takes tensors with positive entries and begins by unit normalization of input tensors so that the domain of integration is really the positive orthant of the unit sphere. This is the case for many tasks relating to images and audio. 
 If the bounds provided have a different shape they will be broadcasted to the above shape. Also if given as python lists or numpy arrays they will be converted torch tensors. Therefore the user could give bounds = [0,1] and this would give the same as the default.
 
 The objects in this class are callable. When called with no arguments the equivariance error will be calculated on a random sample of size n points inside the given bounds. If called with a single tensor argument, the equivariance error will be calculated at that point. Natural inputs would be elements of the training set or vectors that are randomly generated using a different scheme than our default. 

@@ -17,8 +17,10 @@ class EquivarianceRegularizer(nn.Module):
     def __call__(self, inputs = None):
         funcs = random.choices(self.transforms, k=self.num_funcs)
         output = 0
-        if inputs == None:
+        if inputs is None:
             inputs = self.sampler()
+        else:
+            self.n = inputs.shape[0]
         for f in funcs:
             #This is a trick that lets f be random as long as f[0]==f[1], in which case the user should omit f[1] from the list
             if len(f)==3:
@@ -47,8 +49,8 @@ class EquivarianceRegularizer(nn.Module):
         if self.dist == "cross_entropy":
             t1 = t1.reshape(self.n, prod(out_shape[1:]))
             t2 = t2.reshape(self.n, prod(out_shape[1:]))
-            t1 = torch.log(t1)
-            t2 = torch.log(t2)
+            t1 = torch.nan_to_num(torch.log(t1), nan=0.0, posinf = 0.0, neginf = 0.0)
+            t2 = torch.nan_to_num(torch.log(t2), nan=0.0, posinf = 0.0, neginf = 0.0)
             return torch.mean(torch.linalg.norm(t1-t2, dim = -1))
 
     def sampler(self):
