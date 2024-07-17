@@ -1,6 +1,6 @@
 # Equivariance-Regularizer
 ~~~
-pip install equivariance-regularizer==0.1.0
+pip install equivariance-regularizer
 ~~~
 A regularization term for Pytorch that pushes the model to be more equivariant with respect to a given semigroup action. 
 
@@ -23,23 +23,23 @@ If the bounds provided have a different shape they will be broadcasted to the ab
 The objects in this class are callable. When called with no arguments the equivariance error will be calculated on a random sample of size n points inside the given bounds. If called with a single tensor argument, the equivariance error will be calculated at that point. Natural inputs would be elements of the training set or vectors that are randomly generated using a different scheme than our default. 
 
 ## Implementation
+First you need to create the EquivarianceRegularizer object:
 ~~~python
-from equivariance_regularizer import EquivarianceRegularizer
-class Model(torch.nn.Module):
-    ...
-    def __init__(transforms, dist, n, num_funcs):
-        ...
-    def training_step(self):
-        ...
-        loss += equivariance_error()
-        ...
-model = Model()
 equivariance_error = EquivarianceRegularizer(model, shape, transforms, dist, n, num_funcs, bounds)
 ~~~
+Then during the training step, after calculating the loss, calculate the equivariance error and add it to the model's loss tensor.
+~~~python
+loss += equivariance_error()
+~~~
+You can also optionally provide a tensor to the equivariance_error function:
+~~~python
+loss += equivariance_error(input_data)
+~~~
+This calculates the equivariance error that that specific input point, as explained below.
 
-Note that this seems backwards because equivariance_error appears in the training step which is before equivariance_error is defined, but this is no problem as long as equivariance_error is not referred to while initializing the model. It is necessary for the model to be defined before equivariance_error is.
 
-Also, it is recommended not to initialize EquivarianceRegularizer inside of the model with a call like 
+
+Do not initialize EquivarianceRegularizer inside of the model with a call like 
 ~~~python
 EquivarianceRegularizer(self, shape, transforms, dist, n, num_funcs, bounds)
 ~~~
